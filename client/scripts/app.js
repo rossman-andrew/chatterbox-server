@@ -30,14 +30,6 @@ var app = {
 
     // Poll for new messages
     setInterval(function() {
-          
-      var message = {
-        username: 'myUser',
-        text: 'myText',
-        roomname: 'lobby'
-      };
-      app.send(message);
-
       app.fetch(true);
     }, 3000);
   },

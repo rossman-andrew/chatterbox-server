@@ -12,9 +12,9 @@ this file and include it in basic-server.js so that it actually works.
 
 **************************************************************/
 var url = require('url');
-
-var storage = [];
-var trigger = false;
+var data = {
+  results: []
+};
 
 var defaultCorsHeaders = {
   'access-control-allow-origin': '*',
@@ -46,7 +46,8 @@ var requestHandler = function(request, response) {
 
   // See the note below about CORS headers.
   var headers = defaultCorsHeaders;
-
+  
+  var trigger = false;
   // Tell the client we are sending them plain text.
   //
   // You will need to change this if you are sending something
@@ -55,59 +56,58 @@ var requestHandler = function(request, response) {
 
   // .writeHead() writes to the request line and headers of the response,
   // which includes the status and all headers.
-
-
-
-  if (request.method === 'POST') {
-    statusCode = 201;    
-
-    var body = [];
-    // if get / post
-    request.on('data', (chunk) => {
-    
-      body.push(chunk);
-    });
-    
-    request.on('end', () => {
-
-      body = body.join('');
-      body = body.split('&');
-      body = body.map((kv)=> {
-        return kv.split('=');
-      });
-      var result = {};
-      body.forEach((tuple) => {
-        result[tuple[0]] = tuple[1];
-      });
-      if (!trigger) {
-        storage.push(result);
-        trigger = !trigger;
-      }
-      console.log('storage', storage);
-      var data = {};
-      data.results = storage;
-      data = JSON.stringify(data);
-      response.writeHead(statusCode, headers);
-      response.end(data);
-    });
-    request.on('error', (err) => {
-      console.log('THE err', err);
-      statusCode = 404;      
-    });
-
-  } else if (request.method === 'GET') {
-    console.log('get');
+  if (request.method === 'OPTIONS') {
+    var statusCode = 200;
+    response.writeHead(statusCode, headers);
+    response.end('Options request dealt with');
   }
 
-  response.writeHead(statusCode, headers);
+  if (request.url === '/classes/messages' && request.method === 'GET') {
+    var statusCode = 200;
+    response.writeHead(statusCode, headers);
+    response.end(JSON.stringify(data));
+  }
+
+  if (request.url === '/classes/messages' && request.method === 'POST') {
+    var statusCode = 201;
+    var body;
+    request.on('data', function(chunk) {
+      //body += chunk;
+      body = chunk;//chunk.toString(); //JSON.stringify(chunk);
+      //data.results.push(JSON.parse(messageStr));
+    });
+    request.on('end', function() {
+      //body = JSON.stringify(body);
+      console.log(body);
+      //body = Buffer.concat(body).toString();
+      data.results.push(JSON.parse(body));
+      response.writeHead(statusCode, headers);
+      response.end('Post successful');
+    });
+  }
+
+  /*if (request.url === '/classes/room' && request.method === 'POST') {
+    var statusCode = 201;
+    var body = '';
+    request.on('data', function(chunk) {
+      body += chunk;
+    });
+    request.on('end', ()=>{
+
+      console.log(body);
+      //body = Buffer.concat(body).toString();
+      // data.results.push(JSON.parse(body));
+      response.writeHead(statusCode, headers);
+      response.end('Post successful');
+    });
+  }   */
+
+  if (request.url !== '/classes/messages' && request.url !== '/classes/room') {
+    var statusCode = 404;
+    response.writeHead(statusCode, headers);
+    response.end('Failed -- 404');
+  }
   
-  // response.end('REDEFINE end')
-  //if get request, don't parse, 
-  //just send them [server data], on some response.prop, 
-    //with updated headers, etc. 
-
-
-
 
   // Make sure to always call response.end() - Node may not send
   // anything back to the client until you do. The string you pass to
@@ -116,7 +116,7 @@ var requestHandler = function(request, response) {
   //
   // Calling .end "flushes" the response's internal buffer, forcing
   // node to actually send all the data over to the client.
-  response.end('something else!');
+  //response.end('something else!');
 };
 
 // These headers will allow Cross-Origin Resource Sharing (CORS).
@@ -130,3 +130,27 @@ var requestHandler = function(request, response) {
 // client from this domain by setting up static file serving.
 
 exports.requestHandler = requestHandler;
+
+//console.log('unparsed body', body); console.log(JSON.parse(body));
+// if (body.slice(0, 1) !== '{') {
+//   body = body.split('&');
+//   body = body.map((kv)=> {  
+//     return kv.split('=');
+//   });
+//   var result = {};
+//   body.forEach((tuple) => {
+//     result[tuple[0]] = tuple[1];
+//   });
+//   if (!trigger) {
+//     data.results.push(body);
+//     trigger = !trigger;
+//   }
+
+//   data.results.push(result);
+//   console.log('result', result);
+//   console.log('raw data', data);
+//   data = JSON.stringify(data);
+//   console.log('json data', data);
+//   response.writeHead(statusCode, headers);
+//   response.end(data);
+// }
