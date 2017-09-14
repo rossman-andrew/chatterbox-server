@@ -83,10 +83,12 @@ var requestHandler = function(request, response) {
         storage.push(result);
         trigger = !trigger;
       }
-      // console.log('storage', storage);
-      var data = JSON.stringify(storage);
+      console.log('storage', storage);
+      var data = {};
+      data.results = storage;
+      data = JSON.stringify(data);
       response.writeHead(statusCode, headers);
-      response.end(data, 201);
+      response.end(data);
     });
     request.on('error', (err) => {
       console.log('THE err', err);
